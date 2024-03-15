@@ -83,29 +83,26 @@ def logout(req):
 
 @session_middleware
 def destinations(req):
-    userId=Session.objects.get(token=req.COOKIES.get('token')).user_id
-    dests=Destination.objects.filter(user_id=userId)
-    print("dests:")
-    print(dests)
+    dests=Destination.objects.filter(user_id=req.user.id)
     return render(req, 'core/destinations.html',{"destinations":dests,"topBarInfo":getTopBarInfoLoggedInTho()})
 
 @session_middleware
 def givenDestination(req,id): #destinations/<int:id>
     dest=Destination.objects.get(pk=id)
-    return render(req,'core/destination.html',{"destination":dest,"topBarInfo":getTopBarInfoLoggedInTho()})
+    if dest.user_id==req.user.id:
+        return render(req,'core/destination.html',{"destination":dest,"topBarInfo":getTopBarInfoLoggedInTho()})
+    else:
+        return HttpResponseBadRequest("you dont have accsess")
 
 @session_middleware
 def createDestination(req):
-    userId=Session.objects.get(token=req.COOKIES.get('token')).user_id
-    print("userId: "+str(userId))
     public = req.POST.get("public")=="on"
-    #find in the sessions table the user with this token
     destination = Destination(
         name=req.POST.get("name"),
         review=req.POST.get("review"),
         rating=req.POST.get("rating"),
         share_publicly=public,
-        user=User.objects.get(pk=userId)
+        user=req.user
     )
     destination.save()
     return redirect("/destinations")

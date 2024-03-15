@@ -2,6 +2,30 @@ from .models import Session, User,Destination
 from django.shortcuts import redirect
 from django.http import HttpResponseBadRequest
 
+
+
+def session_middleware(next):
+    def middleware(req, *args, **kwargs):
+        try:
+            token = req.COOKIES.get('token')
+            session = Session.objects.get(token=token)
+            user=User.objects.get(id=session.user_id)
+            req.user=user
+            
+            #i should prolly check to make sure the logged in user is allowed to access a certain destination.
+
+            response = next(req, *args, **kwargs)
+            return response
+      
+        except:
+            return redirect("/sessions/new")
+        
+        
+    return middleware
+
+
+
+"""
 def session_middleware(next):
     def middleware(req, *args, **kwargs):
         try: #they have a token
@@ -37,3 +61,4 @@ def session_middleware(next):
         
     return middleware
 
+"""
